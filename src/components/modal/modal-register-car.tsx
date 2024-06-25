@@ -1,28 +1,33 @@
 "use client";
 import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 import { BsFillBackspaceFill } from "react-icons/bs";
 import { useUserStore } from '@/store/UserStorage';
 
 import { useRouter } from 'next/navigation'
+import client from '@/apolloclient';
+import { gql } from '@apollo/client';
 
 interface ModalLoginProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-
+interface Zona {
+    id: number;
+    name: string;
+    cantEstacionamientosTotales: number;
+    cantEstacionamientosOcupados: number;
+}
 
 const ModalRegisterCar: React.FC<ModalLoginProps> = ({ isOpen, onClose }) => {
     const router = useRouter()
 
-    const {id_user, token} = useUserStore();
+    const { id_user, token } = useUserStore();
     const [patente, setPatente] = useState<string>('');
-    const [email, setEmail] = useState<string>('');
     const [dateHourStart, setDateHourStart] = useState<string>('');
-    const [idZone, setIdZone] = useState<number>(1);
+    const [selectedZone, setSelectedZone] = useState<Zona | null>(null);
 
-    const [isModalSigninOpen, setIsModalSigninOpen] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
 
     const [isError, setIsError] = useState<boolean>(false);
@@ -31,43 +36,60 @@ const ModalRegisterCar: React.FC<ModalLoginProps> = ({ isOpen, onClose }) => {
     const handleClose = () => {
         onClose();
     };
-    const openModalSignin = () => {
-        setIsModalSigninOpen(true);
-    };
-    const closeModalSignin = () => {
-        setIsModalSigninOpen(!isModalSigninOpen);
-    };
 
     const [currentTime, setCurrentTime] = useState('');
-    
 
     useEffect(() => {
+        fetchZones();
+        fetchDate();
+    }, []);
+
+    const fetchDate = async () => {
         axios.get('http://worldtimeapi.org/api/timezone/America/Santiago')
             .then(response => {
                 const datetime = new Date(response.data.datetime);
-                setDateHourStart(datetime.toISOString());
-                const time =  datetime.getDate() + '/' + datetime.getMonth() + '/' + datetime.getFullYear() + ' - ' + datetime.getHours() + ':' + datetime.getMinutes() ;
+                const isoString = datetime.toISOString();
+                const formattedDate = isoString.slice(0, isoString.indexOf('.')); // remove seconds and milliseconds
+                // const formattedDateWithoutZ = formattedDate.slice(0, formattedDate.length - 1); 
+                setDateHourStart(formattedDate);
+                const time =  datetime.getDate() + '/' + (datetime.getMonth() + 1) + '/' + datetime.getFullYear() + ' - ' + datetime.getHours() + ':' + datetime.getMinutes() ;
                 setCurrentTime(time);
-
             })
             .catch(error => console.error('Error fetching time: ', error));
-    }, []);
-
-    const fetchCreateBooking = async (dateHourStart: string ,patente: string, idZone: number) => {
+    }
+    const fetchCreateBooking = async (dateHourStart: string, patente: string) => {
         setLoading(true);
         setIsError(false);
+        const idUser = id_user;
+        const idZone = selectedZone?.id;
+        console.log(dateHourStart, patente, idZone, idUser);
         try {
-            const response = await axios.post(`https://backend-plataforma.onrender.com/api/login`, {
-                dateHourStart: dateHourStart,
-                patente: patente,
-                idZone: idZone,
-                idUser: id_user,
-
+            const result = await client.mutate({
+                mutation: gql`
+                mutation {
+                    createBooking(createBookingInput:{
+                      dateHourStart: "${dateHourStart}",
+                      patente: "${patente}",
+                      idZone: ${idZone},
+                      idUser: ${idUser}
+                    }){
+                      success
+                    }
+                  }
+                `
             });
-            console.log(response.data);
-            console.log(response.data.role)
-            setLoading(false);
 
+            console.log(result.data.createBooking.success);
+            if (result.data.createBooking.success) {
+                setLoading(false);
+                onClose();
+                router.refresh();
+            }
+            else {
+                setLoading(false);
+                setIsError(true);
+                setErrorMessage("Error al crear reserva, intente de nuevo.");
+            }
         }
         catch (error) {
             setLoading(false);
@@ -76,6 +98,32 @@ const ModalRegisterCar: React.FC<ModalLoginProps> = ({ isOpen, onClose }) => {
             console.log("Error: ", error);
         };
     };
+
+    const [zonas, setZonas] = useState<Zona[]>([]);
+
+    const fetchZones = async () => {
+        try {
+            const result = await client.query({
+                query: gql`
+          query{
+            findAllZones{
+              zones {
+                id
+                name
+                cantEstacionamientosTotales
+                cantEstacionamientosOcupados
+              }
+            }
+          }
+          `
+            });
+            setZonas(result.data.findAllZones.zones);
+            console.log(result.data.findAllZones.zones);
+        }
+        catch (error) {
+            console.log(error);
+        }
+    }
 
     return (
         <>
@@ -101,17 +149,26 @@ const ModalRegisterCar: React.FC<ModalLoginProps> = ({ isOpen, onClose }) => {
                                     maxLength={6}
                                     className="p-2 mx-5 my-2 border border-gray-300 rounded-md text-black font-semibold w-full"
                                     onChange={(event) => setPatente(event.target.value)} />
-                            
+
                                 {/* Input de horas */}
                                 <input type="text" disabled={false} id="llegada" name="llegada" min="06:00" max="20:00"
-                                    className="p-2 mx-5 my-2 border border-gray-300 rounded-md  font-semibold w-full text-gray-500" placeholder={currentTime} value={currentTime}  />
+                                    className="p-2 mx-5 my-2 border border-gray-300 rounded-md  font-semibold w-full text-gray-500" placeholder={'2024-06-12T09:00:00'} value={dateHourStart} />
                                 {/* selector de zona 1, zona 2 y zona 3 */}
-                                <select className="p-2 mx-5 my-2 border border-gray-300 rounded-md text-black font-semibold w-full">
-                                    <option value="1">Zona 1</option>
-                                    <option value="2">Zona 2</option>
-                                    <option value="3">Zona 3</option>
+                                <select className='bg-white w-42 h-10 rounded-lg' onChange={(e) => {
+                                    const selectedId = parseInt(e.target.value);
+                                    const selectedZone = zonas.find((z) => z.id === selectedId);
+                                    setSelectedZone(selectedZone || null);
+                                }
+                                }>
+                                    <option value="">Seleccione una zona</option>
+                                    {zonas.map((zona) => (
+                                        <option key={zona.id} value={zona.id}>
+                                            {zona.name}
+                                        </option>
+                                    ))}
                                 </select>
-                                <button disabled={loading} className="bg-yellow-500 text-black p-2 m-2 rounded-md w-full font-bold" onClick={() => fetchCreateBooking(dateHourStart, patente, idZone)}>{loading ? 'Cargando...' : 'Registrar auto'}</button>
+
+                                <button disabled={loading} className="bg-yellow-500 text-black p-2 m-2 rounded-md w-full font-bold" onClick={() => fetchCreateBooking(dateHourStart, patente)}>{loading ? 'Cargando...' : 'Registrar auto'}</button>
                                 {isError && (
                                     <div className="flex justify-center items-center h-12 text-red-500 font-bold">
                                         {errorMessage}

@@ -5,10 +5,21 @@ import Image from 'next/image';
 
 export default function Parking(){
     const slots = parkingSlots;
+    const booking = {
+        id: 1,
+        dateHourStart: "2023-09-01T00:00:00.000Z",
+        dateHourFinish: "2023-09-01T00:00:00.000Z",
+        status: "active",
+        patente: "XXXX99",
+        zone: {
+            id: 1,
+            name: "Zona 1"
+        }
+    }
 
     return (
      <main>
-        <Ticket props={{ idCar: 1, llegada: "", salida: "", patente:"XXXX99" }} />
+        <Ticket booking={booking} />
      </main>
     )
 }

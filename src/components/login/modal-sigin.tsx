@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import { BsFillBackspaceReverseFill } from "react-icons/bs";
 import { useUserStore } from "@/store/UserStorage";
 import { gql, useMutation } from "@apollo/client";
+import client from "@/apolloclient";
 
 interface ModalSigninProps {
     isOpen: boolean;
@@ -25,7 +26,6 @@ const ModalSignin: React.FC<ModalSigninProps> = ({ isOpen, onClose }) => {
 
     const { setIdUser, setEmailUser } = useUserStore();
     
-    const [registerUser, { loading, error }] = useMutation(REGISTER_MUTATION);
 
     const handleClose = () => {
         onClose();
@@ -37,44 +37,34 @@ const ModalSignin: React.FC<ModalSigninProps> = ({ isOpen, onClose }) => {
 
     const handleRegister = async () => {
         try {
-          const { data } = await registerUser({
-            variables: {
-              name: name,
-              email: email,
-              password: password
+          const { data } = await client.mutate({
+            mutation:  gql`
+            mutation CreateUser($name: String!, $email: String!, $password: String!){
+              createUser(createUserInput: {
+                name: $name,
+                email: $email,
+                password: $password,
+                tipoUser: false
+              }) {
+                success
+              }
             }
+          `,
+          variables: { name, email, password}
           });
           if (data.createUser.success) {
-            //  Para manejar el éxito del registro
+            console.log("Registro exitoso");
             setIdUser(data.createUser.id);
             setEmailUser(data.createUser.email);
             handleClose();
           } else {
-            // Caso de un registro fallido
             console.error("Registro fallido");
           }
         } catch (error) {
-          // Manejar errores
           console.error("Error al registrar:", error);
         }
       };
 
-    
-      /*
-    const fetchSigin = async (name: string, email: string, password: string) => {
-        try {
-            const response = await axios.post(`https://backend-plataforma.onrender.com/api/register`, {
-                email: email,
-                password: password,
-                name: name,
-            });
-            setIdUser(response.data.id);
-            setEmailUser(response.data.email);
-            handleClose();
-        } catch (error) {
-            console.log(error);
-        }
-    }*/
 
     return (
         <>

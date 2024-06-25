@@ -10,15 +10,23 @@
   },
   "dependencies": {
     "@apollo/client": "^3.10.5",
+    "@paypal/checkout-server-sdk": "^1.0.3",
+    "@paypal/react-paypal-js": "^8.5.0",
+    "@supabase/supabase-js": "^2.43.5",
     "axios": "^1.7.2",
+    "jsonwebtoken": "^9.0.2",
+    "mercadopago": "^2.0.9",
     "next": "14.2.3",
+    "paypal": "^1.0.1",
     "react": "^18",
     "react-dom": "^18",
     "react-icons": "^5.2.1",
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20",
+    "@types/paypal__checkout-server-sdk": "^1.0.8",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",

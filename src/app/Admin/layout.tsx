@@ -6,17 +6,33 @@ import { AiFillFund } from "react-icons/ai";
 import { FaMoneyBillWave,FaRegUserCircle } from "react-icons/fa";
 import { MdLogout } from "react-icons/md";
 import {useRouter} from 'next/navigation'
+import { useUserStore } from "@/store/UserStorage";
+import DenyAcces from "@/components/ui/DenyAcces";
 export default function Layout({
     children,
   }: Readonly<{
     children: React.ReactNode;
   }>){
-
+    const {clearUser} = useUserStore();
     const router = useRouter();
 
     const handleLogOut = () => {
-        // localStorage.removeItem('email');
+        clearUser();
         router.push('/');
+    }
+
+    const {tipoUser} = useUserStore();
+
+    console.log(tipoUser)
+    if(tipoUser == false){
+      return(
+        <div>
+          <Link href={'/'}>
+          <DenyAcces/>
+            
+            </Link>
+        </div>
+      )
     }
     return(
         <div className="flex ">

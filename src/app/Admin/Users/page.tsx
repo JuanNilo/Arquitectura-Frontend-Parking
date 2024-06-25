@@ -1,8 +1,15 @@
+'use client'
+import ListaReservas from '@/components/user/ListaReservas';
+import { useParams } from 'next/navigation';
+import React from 'react';
 
-export default function Home() {
+interface Params {
+    id: number;
+}
+
+export default function page ({params}: {params: Params}) {
+    const {id} = params;
     return(
-        <h1>
-            Hola
-        </h1>
+        <ListaReservas id={ 0 } />
     )
 }

@@ -11,9 +11,29 @@ interface ticketProps {
     patente: string
 }
 
-export default function Ticket({ props }: { props: ticketProps }) {
-    const { idCar, llegada, salida, patente } = props;
+interface Booking {
+    id: number;
+    dateHourStart: string;
+    dateHourFinish: string;
+    status: string;
+    patente: string;
+    zone: {
+        id: number;
+        name: string;
+    }
+}
+export default function Ticket({ booking }: { booking: Booking | undefined }) {
+    
+    let patente, hourStart,dateStart, dateHourFinish, zone;
 
+    if (booking) {
+        patente = booking.patente;
+        hourStart = new Date(booking.dateHourStart).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+        dateStart = new Date(booking.dateHourStart).toLocaleDateString('es-CL');
+        dateHourFinish = booking.dateHourFinish;
+        zone = booking.zone;
+    }
+    
     const [currentTime, setCurrentTime] = useState('');
 
     useEffect(() => {
@@ -39,8 +59,8 @@ export default function Ticket({ props }: { props: ticketProps }) {
 
                 </div>
                 {/* Date */}
-                <p className=''>16/05/2024</p>
-                {llegada != '' ? (<p>Llegada: {llegada}</p>) : (<p>Llegada: esperando...</p>)}
+                <p className=''>{dateStart ? dateStart : "cargando..."}</p>
+                {hourStart ? (<p>Llegada: {hourStart}</p>) : (<p>Llegada: esperando...</p>)}
                 {currentTime != '' ? (<p>Salida: {currentTime}</p>) : (<p>Salida: esperando...</p>)}
 
             </div>
@@ -48,7 +68,7 @@ export default function Ticket({ props }: { props: ticketProps }) {
             <div className="flex justify-center">
                 {/* <div className="bg-white p-2 text-black text-center text-2xl font-bold w-[30%] border-black border-4 rounded-xl"> */}
                 <div className="bg-white p-2 text-black mx-auto text-center text-2xl font-bold w-36 border-black border-4 rounded-xl">
-                    {patente != "" ? (<p>{patente}</p>) : (<p>XXXX99</p>)}
+                    {patente ? (<p>{patente}</p>) : (<p>XXXX99</p>)}
                 </div>
             </div>
             {/* <h1 className='text-5xl text-center font-bold text-black pt-4'>Parking ticket</h1> */}

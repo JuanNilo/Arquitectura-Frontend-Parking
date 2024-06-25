@@ -10,6 +10,6 @@ interface Params {
 export default function userParking ({params}: {params: Params}) {
     const {id} = params;
     return(
-        <ListaReservas id={id} />
+        <ListaReservas id={id || 0 } />
     )
 }
